@@ -1,6 +1,6 @@
 service: matti-ai
 
-frameworkVersion: '1'
+frameworkVersion: '3'
 useDotenv: true
 configValidationMode: error
 
@@ -38,7 +38,18 @@ custom:
 provider:
   name: aws
   runtime: python3.10
-
+  region: ${env:REGION}
+  deploymentBucket:
+    name: ${env:BUCKET}
+    serverSideEncryption: AES256
+  vpc:
+      securityGroupIds:
+        - ${env:SECURITY_GROUP}
+      subnetIds:
+        - ${env:SUBNET1}
+        - ${env:SUBNET2}
+        - ${env:SUBNET3}
+        - ${env:SUBNET4}
   iam:
     role:
       statements:
