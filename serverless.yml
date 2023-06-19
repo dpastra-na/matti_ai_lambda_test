@@ -1,4 +1,4 @@
-service: /matti-ai
+service: matti-ai
 
 frameworkVersion: '1'
 useDotenv: true

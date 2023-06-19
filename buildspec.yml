@@ -29,4 +29,4 @@ phases:
     commands:
       - echo "Build phase"
       - echo "Deploying serverless framework"
-#      - serverless deploy --stage production
+      - serverless deploy --stage production
