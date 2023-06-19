@@ -1,20 +1,32 @@
 version: 0.2
+
 phases:
   install:
     runtime-versions:
-      python: 3.11
+      nodejs: 16
     commands:
-      - echo "Installing dependencies..."
-      - pip install -r requirements.txt -t lib
+      - echo "Install Serverless"
+      - npm install -g serverless
+      - echo "Installing dependencies"
+      - npm install
+      - echo "Installing Docker"
+      - sudo apt install apt-transport-https ca-certificates curl software-properties-common
+      - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+      - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+      - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+      - sudo apt update
+      - apt-cache policy docker-ce
+      - apt install docker-ce -y
+      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2&
+      - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
+  pre_build:
+    commands:
+      - echo "Linter executed"
+      #- yarn lint
+      - echo "Tests executed"
+      #- yarn test
   build:
     commands:
-      - echo "Zipping deployment package..."
-      - cd lib
-      - zip -r9 ../deployment_package.zip .
-      - cd ..
-      - zip -g deployment_package.zip main.py
-  post_build:
-    commands:
-      - echo "Updating lambda Function..."
-      - aws lambda update-function-code --function-name matti-ai --zip-file fileb://deployment_package.zip
-      - echo "DONE!!"
+      - echo "Build phase"
+      - echo "Deploying serverless framework"
+      - serverless deploy --stage production

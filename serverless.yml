@@ -1,0 +1,87 @@
+service: /matti-ai
+
+frameworkVersion: '1'
+useDotenv: true
+configValidationMode: error
+
+plugins:
+  - serverless-iam-roles-per-function
+  - serverless-offline
+  - serverless-prune-plugin
+  - serverless-python-requirements
+package:
+  individually: true
+  excludeDevDependencies: false
+  patterns:
+    - .gitignore
+    - .git/**
+    - .github/**
+    - .vscode/**
+    - node_modules/**
+    - venv/**
+    - package-lock.json
+    - package.json
+    - requirements.txt
+    - serverless.yml
+
+custom:
+  deploymentBucket:
+    versioning: true
+    blockPublicAccess: true
+  pythonRequirements:
+    dockerizePip: true
+    zip: true
+    layer: true
+    useDownloadCache: true
+    useStaticCache: true
+
+provider:
+  name: aws
+  runtime: python3.10
+  region: ${env:REGION}
+  deploymentBucket:
+    name: ${env:BUCKET}
+    serverSideEncryption: AES256
+  vpc:
+      securityGroupIds:
+        - ${env:SECURITY_GROUP}
+      subnetIds:
+        - ${env:SUBNET1}
+        - ${env:SUBNET2}
+        - ${env:SUBNET3}
+        - ${env:SUBNET4}
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - xray:PutTelemetryRecords
+            - xray:PutTraceSegments
+          Resource: "*"
+        - Effect: "Allow"
+          Action:
+            - kms:GetPublicKey
+            - secretsmanager:GetSecretValue
+            - kms:Decrypt
+            - ssm:GetParameters
+            - ssm:GetParameter
+          Resource:
+            - arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:AmazonMSK_MVP1-uUqSft
+            - arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:AmazonMSK_MVP2-A1dCu5
+            - arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:WEBHOOK_SECRET-xi9HNr
+            - arn:aws:kms:${aws:region}:${aws:accountId}:key/56341824-5585-4be0-a89f-4c2e6716878a
+            - arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/*
+functions:
+  stripe:
+    description: MattiAI serives
+    handler: main.handler
+    environment:
+      VALIDATE_SIGNATURE: False
+    iamRoleStatementsInherit: true
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+      - arn:aws:lambda:us-east-1:177933569100:layer:AWS-Parameters-and-Secrets-Lambda-Extension:4
+    events:
+      - http:
+          path: /matti-ai
+          method: post
